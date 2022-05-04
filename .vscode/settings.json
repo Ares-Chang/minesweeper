@@ -1,6 +1,9 @@
 {
   "cSpell.words": ["Vitesse"],
   "prettier.enable": true,
+  "[vue]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": true
   },
