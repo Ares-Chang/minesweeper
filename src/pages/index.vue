@@ -2,7 +2,7 @@
 interface BlockState {
   x: number // 坐标 X
   y: number // 坐标 Y
-  revealed?: boolean // 是否翻开
+  revealed: boolean // 是否翻开
   mine?: boolean // 是否炸弹
   flagged?: boolean // 是否被标记
   adjacentMines: number // 附近炸弹数
@@ -11,25 +11,29 @@ interface BlockState {
 const WIDTH = 10
 const HEIGHT = 10
 const state = reactive(
-  Array.from({ length: HEIGHT }, (_, x) =>
+  Array.from({ length: HEIGHT }, (_, y) =>
     Array.from(
       { length: WIDTH },
-      (_, y): BlockState => ({ x, y, adjacentMines: 0 })
+      (_, x): BlockState => ({ x, y, adjacentMines: 0, revealed: false })
     )
   )
 )
 
 /**
  * 计算生成炸弹
+ * @param {Object} initial 初次点击格数据
  */
-function generateMines() {
+function generateMines(initial: BlockState) {
   for (const row of state) {
     for (const block of row) {
-      block.mine = Math.random() < 0.1
+      // 初次点击位置上下左右一格内不生成炸弹
+      if (Math.abs(initial.x - block.x) <= 1) continue
+      if (Math.abs(initial.y - block.y) <= 1) continue
+      block.mine = Math.random() < 0.2
     }
   }
+  updateNumbers()
 }
-generateMines()
 
 /**
  * 以自身为 0 周围八个方向坐标
@@ -47,6 +51,25 @@ const directions = [
   [1, -1],
   [0, -1]
 ]
+
+/**
+ * 查找周边格位信息
+ * @param {Object} block 当前格数据
+ * @return {Array} 返回一个包含周边格信息的数组
+ */
+function getSiblings(block: BlockState) {
+  // 遍历周围八个方向
+  return directions
+    .map(([dx, dy]) => {
+      const x2 = block.x + dx
+      const y2 = block.y + dy
+      if (x2 < 0 || x2 >= WIDTH || y2 < 0 || y2 >= HEIGHT) return undefined // 超出边界，弹出
+
+      return state[y2][x2]
+    })
+    .filter(Boolean) as BlockState[] // 过滤空信息 && 断言(ts)不会有空信息存在
+}
+
 /**
  * 计算周围炸弹数
  */
@@ -55,31 +78,44 @@ function updateNumbers() {
     row.map((block, x) => {
       if (block.mine) return // 自身炸弹，弹出
 
-      // 遍历周围八个方向
-      directions.map(([dx, dy]) => {
-        const x2 = x + dx
-        const y2 = y + dy
-        if (x2 < 0 || x2 >= WIDTH || y2 < 0 || y2 >= HEIGHT) return // 超出边界，弹出
-
-        if (y === 1 && x === 1)
-          console.log(state[y2][x2], dx, dy, state[y2][x2].mine)
+      getSiblings(block).map(item => {
         // 周围如果有炸弹，炸弹计算 +1
-        if (state[y2][x2].mine) {
-          block.adjacentMines += 1
-        }
+        if (item.mine) block.adjacentMines += 1
       })
     })
   })
 }
-updateNumbers()
 
 /**
- * 点击翻牌
- * @param {Number} row 点击行下标
- * @param {Number} col 点击列下标
+ * 清除相连的 0 字块
+ * @param {Object} block 初次点击格数据
  */
-function onClick(row: number, col: number) {
-  console.log(row, col)
+function expendZero(block: BlockState) {
+  if (block.adjacentMines) return
+
+  getSiblings(block).map(item => {
+    if (!item.revealed) {
+      item.revealed = true
+      expendZero(item)
+    }
+  })
+}
+
+let mineGenerated = false // 游戏是否开始
+const dev = true // 开发模式，可查看详情
+/**
+ * 点击翻牌
+ * @param {Object} block 当前格数据
+ */
+function onClick(block: BlockState) {
+  if (!mineGenerated) {
+    // 为优化游戏体验，第一次点击完成后再生成炸弹
+    generateMines(block)
+    mineGenerated = true
+  }
+  block.revealed = true
+  if (block.mine) alert('BOOOM!')
+  expendZero(block)
 }
 
 /**
@@ -101,6 +137,7 @@ const numberColors = [
  * @param {Object} block 当前格数据
  */
 function getBlockClass(block: BlockState) {
+  if (!block.revealed) return 'bg-gray/10'
   return block.mine ? 'bg-red-500/50' : numberColors[block.adjacentMines]
 }
 </script>
@@ -109,9 +146,16 @@ function getBlockClass(block: BlockState) {
   <div>
     Minesweeper
     <div p-5>
-      <div v-for="(row, x) in state" flex="~" items-center justify-center>
+      <div
+        v-for="(row, y) in state"
+        :key="y"
+        flex="~"
+        items-center
+        justify-center
+      >
         <button
-          v-for="(item, y) in row"
+          v-for="(item, x) in row"
+          :key="x"
           flex="~"
           items-center
           justify-center
@@ -121,10 +165,12 @@ function getBlockClass(block: BlockState) {
           border="1 gray-400/10"
           hover="bg-gray/30"
           :class="getBlockClass(item)"
-          @click="onClick(x, y)"
+          @click="onClick(item)"
         >
-          <div v-if="item.mine" i-mdi-mine></div>
-          <div v-else>{{ item.adjacentMines }}</div>
+          <template v-if="item.revealed || dev">
+            <div v-if="item.mine" i-mdi-mine></div>
+            <div v-else>{{ item.adjacentMines }}</div>
+          </template>
         </button>
       </div>
     </div>
