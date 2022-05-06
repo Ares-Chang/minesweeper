@@ -3,6 +3,7 @@ import { isDev, toggleDev } from '~/composables'
 import { GamePlay } from '~/composables/logic'
 
 const play = new GamePlay(10, 10)
+useStorage('mine-state', play.state) // 数据本地持久化
 const state = computed(() => play.board)
 </script>
 
