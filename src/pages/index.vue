@@ -91,10 +91,11 @@ function updateNumbers() {
  * @param {Object} block 初次点击格数据
  */
 function expendZero(block: BlockState) {
-  if (block.adjacentMines) return
+  if (block.adjacentMines) return // 附近有炸弹弹出
 
   getSiblings(block).map(item => {
-    if (!item.revealed) {
+    // 没翻开并且没插旗，自动翻转
+    if (!item.revealed && !item.flagged) {
       item.revealed = true
       expendZero(item)
     }
@@ -108,6 +109,7 @@ const dev = true // 开发模式，可查看详情
  * @param {Object} block 当前格数据
  */
 function onClick(block: BlockState) {
+  if (block.flagged) return // 如果已经插旗，不能翻转
   if (!mineGenerated) {
     // 为优化游戏体验，第一次点击完成后再生成炸弹
     generateMines(block)
@@ -116,6 +118,28 @@ function onClick(block: BlockState) {
   block.revealed = true
   if (block.mine) alert('BOOOM!')
   expendZero(block)
+}
+
+/**
+ * 右键插旗
+ * @param {Object} block 当前格数据
+ */
+function onRightClick(block: BlockState) {
+  if (block.revealed) return // 如果已经展开，不能插旗
+  block.flagged = !block.flagged
+}
+
+watchEffect(checkGameState) // 数据每次更新，检查游戏状态
+/**
+ * 检查游戏状态
+ */
+function checkGameState() {
+  if (!mineGenerated) return
+  const blocks = state.flat()
+  if (blocks.every(item => item.revealed || item.flagged)) {
+    if (blocks.some(item => item.flagged && !item.mine)) alert('You cheat!')
+    else alert('You win!')
+  }
 }
 
 /**
@@ -137,8 +161,9 @@ const numberColors = [
  * @param {Object} block 当前格数据
  */
 function getBlockClass(block: BlockState) {
-  if (!block.revealed) return 'bg-gray/10'
-  return block.mine ? 'bg-red-500/50' : numberColors[block.adjacentMines]
+  if (block.flagged) return 'bg-gray/10' // 插旗后没有经过效果
+  if (!block.revealed) return 'bg-gray/10 hover:bg-gray/30' // 渲染默认及经过样式
+  return block.mine ? 'bg-red-500/50' : numberColors[block.adjacentMines] // 渲染处展示样式
 }
 </script>
 
@@ -163,11 +188,14 @@ function getBlockClass(block: BlockState) {
           h-10
           m="0.5"
           border="1 gray-400/10"
-          hover="bg-gray/30"
           :class="getBlockClass(item)"
           @click="onClick(item)"
+          @contextmenu.prevent="onRightClick(item)"
         >
-          <template v-if="item.revealed || dev">
+          <template v-if="item.flagged">
+            <div i-mdi-flag text-red></div>
+          </template>
+          <template v-else-if="item.revealed || dev">
             <div v-if="item.mine" i-mdi-mine></div>
             <div v-else>{{ item.adjacentMines }}</div>
           </template>
