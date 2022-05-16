@@ -2,9 +2,13 @@
 import { isDev, toggleDev } from '~/composables'
 import { GamePlay } from '~/composables/logic'
 
-const play = new GamePlay(10, 10)
+const play = new GamePlay(5, 5)
 useStorage('mine-state', play.state) // 数据本地持久化
 const state = computed(() => play.board)
+
+watchEffect(() => {
+  play.checkGameState() // 数据每次更新，检查游戏状态
+})
 </script>
 
 <template>

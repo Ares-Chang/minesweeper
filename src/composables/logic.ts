@@ -30,7 +30,6 @@ export class GamePlay {
   state = ref() as Ref<GameState>
 
   constructor(public width: number, public height: number) {
-    watchEffect(() => this.checkGameState) // 数据每次更新，检查游戏状态
     this.reset()
   }
 
@@ -171,7 +170,11 @@ export class GamePlay {
       if (blocks.some(item => item.flagged && !item.mine)) {
         this.state.value.gameState = 'lost'
         this.showAllMines()
-      } else this.state.value.gameState = 'won'
+        alert('lost')
+      } else {
+        this.state.value.gameState = 'won'
+        alert('won')
+      }
     }
   }
 }
