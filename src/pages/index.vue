@@ -14,13 +14,15 @@ watchEffect(() => {
 <template>
   <div>
     Minesweeper
-    <div p-5>
+    <div py-5 overflow-auto>
       <div
         v-for="(row, y) in state"
         :key="y"
         flex="~"
         items-center
         justify-center
+        w-max
+        ma
       >
         <MineBlock
           :item="item"
