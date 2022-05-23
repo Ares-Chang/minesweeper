@@ -29,13 +29,22 @@ interface GameState {
 export class GamePlay {
   state = ref() as Ref<GameState>
 
-  constructor(public width: number, public height: number) {
+  constructor(
+    public width: number,
+    public height: number,
+    public mines: number
+  ) {
     this.reset()
   }
 
   // 引用不便，直接指向
   get board() {
     return this.state.value.board
+  }
+
+  // 二维数组扯平
+  get boards() {
+    return this.state.value.board.flat()
   }
 
   /**
@@ -55,18 +64,52 @@ export class GamePlay {
   }
 
   /**
+   * 获取指定范围随机数
+   * @param {number} min 最小值
+   * @param {number} max 最大值
+   * @returns {number} 指定范围内随机数
+   */
+  random(min: number, max: number) {
+    return Math.random() * (max - min) + min
+  }
+
+  /**
+   * 获取指定范围随机整数
+   * @param {number} min 最小值
+   * @param {number} max 最大值
+   * @returns {number} 指定范围内随机整数
+   */
+  randomInt(min: number, max: number) {
+    return Math.round(this.random(min, max))
+  }
+
+  /**
    * 计算生成炸弹
    * @param {Object} initial 初次点击格数据
    */
-  generateMines(initial: BlockState) {
-    for (const row of this.board) {
-      for (const block of row) {
-        // 初次点击位置上下左右一格内不生成炸弹
-        if (Math.abs(initial.x - block.x) <= 1) continue
-        if (Math.abs(initial.y - block.y) <= 1) continue
-        block.mine = Math.random() < 0.2
-      }
+  generateMines(state: BlockState[][], initial: BlockState) {
+    /**
+     * 判断炸弹生成位置函数
+     * @returns {Boolean} 炸弹是否生成成功
+     */
+    const placeRandom = () => {
+      const x = this.randomInt(0, this.width - 1)
+      const y = this.randomInt(0, this.height - 1)
+      const block = state[y][x]
+      // 初次点击位置上下左右一格内不生成炸弹
+      if (Math.abs(initial.x - block.x) <= 1) return false
+      if (Math.abs(initial.y - block.y) <= 1) return false
+      if (block.mine) return false // 如果已经是弹窗
+      block.mine = true
+      return true
     }
+    // 生成炸弹并指定位置
+    Array.from({ length: this.mines }, () => {
+      let placed = false // 记录当前炸弹是否生成成功
+      while (!placed) {
+        placed = placeRandom()
+      }
+    })
     this.updateNumbers()
   }
 
@@ -130,7 +173,7 @@ export class GamePlay {
 
     // 为优化游戏体验，第一次点击完成后再生成炸弹
     if (!this.state.value.mineGenerated) {
-      this.generateMines(block)
+      this.generateMines(this.state.value.board, block)
       this.state.value.mineGenerated = true
     }
     block.revealed = true
