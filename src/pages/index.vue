@@ -25,9 +25,9 @@ watchEffect(() => {
         ma
       >
         <MineBlock
-          :item="item"
           v-for="(item, x) in row"
           :key="x"
+          :item="item"
           @click="play.onClick(item)"
           @contextmenu.prevent="play.onRightClick(item)"
         />
@@ -39,8 +39,12 @@ watchEffect(() => {
     </div>
 
     <div flex="~ gap-1" justify-center>
-      <button btn @click="toggleDev()">{{ isDev ? 'DEV' : 'NORMAL' }}</button>
-      <button btn @click="play.reset()">RESET</button>
+      <button btn @click="toggleDev()">
+        {{ isDev ? 'DEV' : 'NORMAL' }}
+      </button>
+      <button btn @click="play.reset()">
+        RESET
+      </button>
     </div>
   </div>
 </template>

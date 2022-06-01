@@ -15,7 +15,7 @@ const directions = [
   [1, 1],
   [1, 0],
   [1, -1],
-  [0, -1]
+  [0, -1],
 ]
 
 /**
@@ -32,7 +32,7 @@ export class GamePlay {
   constructor(
     public width: number,
     public height: number,
-    public mines: number
+    public mines: number,
   ) {
     this.reset()
   }
@@ -55,11 +55,11 @@ export class GamePlay {
       board: Array.from({ length: this.height }, (_, y) =>
         Array.from(
           { length: this.width },
-          (_, x): BlockState => ({ x, y, adjacentMines: 0, revealed: false })
-        )
+          (_, x): BlockState => ({ x, y, adjacentMines: 0, revealed: false }),
+        ),
       ),
       mineGenerated: false,
-      gameState: 'play'
+      gameState: 'play',
     }
   }
 
@@ -97,18 +97,19 @@ export class GamePlay {
       const y = this.randomInt(0, this.height - 1)
       const block = state[y][x]
       // 初次点击位置上下左右一格内不生成炸弹
-      if (Math.abs(initial.x - block.x) <= 1) return false
-      if (Math.abs(initial.y - block.y) <= 1) return false
-      if (block.mine) return false // 如果已经是弹窗
+      if (Math.abs(initial.x - block.x) <= 1)
+        return false
+      if (Math.abs(initial.y - block.y) <= 1)
+        return false
+      if (block.mine)
+        return false // 如果已经是弹窗
       block.mine = true
       return true
     }
     // 生成炸弹并指定位置
-    Array.from({ length: this.mines }, () => {
+    Array.from({ length: this.mines }, () => null).forEach(() => {
       let placed = false // 记录当前炸弹是否生成成功
-      while (!placed) {
-        placed = placeRandom()
-      }
+      while (!placed) placed = placeRandom()
     })
     this.updateNumbers()
   }
@@ -136,13 +137,15 @@ export class GamePlay {
    * 计算周围炸弹数
    */
   updateNumbers() {
-    this.board.map(row => {
-      row.map(block => {
-        if (block.mine) return // 自身炸弹，弹出
+    this.board.forEach((row) => {
+      row.forEach((block) => {
+        if (block.mine)
+          return // 自身炸弹，弹出
 
-        this.getSiblings(block).map(item => {
+        this.getSiblings(block).forEach((item) => {
           // 周围如果有炸弹，炸弹计算 +1
-          if (item.mine) block.adjacentMines += 1
+          if (item.mine)
+            block.adjacentMines += 1
         })
       })
     })
@@ -153,9 +156,10 @@ export class GamePlay {
    * @param {Object} block 初次点击格数据
    */
   expendZero(block: BlockState) {
-    if (block.adjacentMines) return // 附近有炸弹
+    if (block.adjacentMines)
+      return // 附近有炸弹
 
-    this.getSiblings(block).map(item => {
+    this.getSiblings(block).forEach((item) => {
       // 没翻开并且没插旗，自动翻转
       if (!item.revealed && !item.flagged) {
         item.revealed = true
@@ -169,7 +173,8 @@ export class GamePlay {
    * @param {Object} block 当前格数据
    */
   onClick(block: BlockState) {
-    if (block.flagged) return // 如果已经插旗，不能翻转
+    if (block.flagged)
+      return // 如果已经插旗，不能翻转
 
     // 为优化游戏体验，第一次点击完成后再生成炸弹
     if (!this.state.value.mineGenerated) {
@@ -190,8 +195,10 @@ export class GamePlay {
    * @param {Object} block 当前格数据
    */
   onRightClick(block: BlockState) {
-    if (this.state.value.gameState !== 'play') return // 游戏未处于开始状态，不可操作
-    if (block.revealed) return // 如果已经展开，不能插旗
+    if (this.state.value.gameState !== 'play')
+      return // 游戏未处于开始状态，不可操作
+    if (block.revealed)
+      return // 如果已经展开，不能插旗
     block.flagged = !block.flagged
   }
 
@@ -206,15 +213,18 @@ export class GamePlay {
    * 检查游戏状态
    */
   checkGameState() {
-    if (this.state.value.gameState !== 'play') return // 游戏未处于开始状态，不可操作
-    if (!this.state.value.mineGenerated) return // 游戏未开始，不做检查
+    if (this.state.value.gameState !== 'play')
+      return // 游戏未处于开始状态，不可操作
+    if (!this.state.value.mineGenerated)
+      return // 游戏未开始，不做检查
     const blocks = this.board.flat()
     if (blocks.every(item => item.revealed || item.flagged)) {
       if (blocks.some(item => item.flagged && !item.mine)) {
         this.state.value.gameState = 'lost'
         this.showAllMines()
         alert('lost')
-      } else {
+      }
+      else {
         this.state.value.gameState = 'won'
         alert('won')
       }
