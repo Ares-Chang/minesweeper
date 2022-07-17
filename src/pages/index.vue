@@ -2,7 +2,7 @@
 import { isDev, toggleDev } from '~/composables'
 import { GamePlay } from '~/composables/logic'
 
-const play = new GamePlay(12, 12, 30)
+const play = new GamePlay(5, 5, 3)
 useStorage('mine-state', play.state) // 数据本地持久化
 const state = computed(() => play.board)
 
@@ -46,5 +46,8 @@ watchEffect(() => {
         RESET
       </button>
     </div>
+
+    <!-- 胜利烟花 -->
+    <Confetti :passed="play.state.value.gameState === 'won'" />
   </div>
 </template>
