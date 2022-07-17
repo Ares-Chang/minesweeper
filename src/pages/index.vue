@@ -7,7 +7,7 @@ useStorage('mine-state', play.state) // 数据本地持久化
 const state = computed(() => play.board)
 
 const now = $(useNow())
-const timerMS = $computed(() => Math.round((+now - play.state.value.startMS) / 1000)) // 游戏计时
+const timerMS = $computed(() => Math.round(((play.state.value.endMS || +now) - play.state.value.startMS) / 1000)) // 游戏计时
 
 /**
  * 计算炸弹剩余量(根据旗子数决定)
@@ -98,6 +98,6 @@ watchEffect(() => {
     </div>
 
     <!-- 胜利烟花 -->
-    <Confetti :passed="play.state.value.gameState === 'won'" />
+    <Confetti :passed="play.state.value.status === 'won'" />
   </div>
 </template>

@@ -18,14 +18,16 @@ const directions = [
   [0, -1],
 ]
 
+type GameStates = 'play' | 'won' | 'lost' // 游戏状态
 /**
  * 游戏状态接口
  */
 interface GameState {
   board: BlockState[][] // 存储面板格位数据
   mineGenerated: Boolean // 游戏是否开始
-  gameState: 'play' | 'won' | 'lost' // 游戏状态
+  status: GameStates // 游戏状态
   startMS: number // 游戏时长
+  endMS?: number // 结束时长
 }
 export class GamePlay {
   state = ref() as Ref<GameState>
@@ -64,7 +66,7 @@ export class GamePlay {
         ),
       ),
       mineGenerated: false,
-      gameState: 'play',
+      status: 'play',
       startMS: +Date.now(),
     }
   }
@@ -177,6 +179,9 @@ export class GamePlay {
    * @param {Object} block 当前格数据
    */
   onClick(block: BlockState) {
+    if (this.state.value.status !== 'play')
+      return // 游戏未处于开始状态，不可操作
+
     if (block.flagged)
       return // 如果已经插旗，不能翻转
 
@@ -187,8 +192,7 @@ export class GamePlay {
     }
     block.revealed = true
     if (block.mine) {
-      this.state.value.gameState = 'lost'
-      this.showAllMines()
+      this.onGameOver('lost')
       return
     }
     this.expendZero(block)
@@ -199,7 +203,7 @@ export class GamePlay {
    * @param {Object} block 当前格数据
    */
   onRightClick(block: BlockState) {
-    if (this.state.value.gameState !== 'play')
+    if (this.state.value.status !== 'play')
       return // 游戏未处于开始状态，不可操作
     if (block.revealed)
       return // 如果已经展开，不能插旗
@@ -216,8 +220,14 @@ export class GamePlay {
     const notRevealed = sliblings.reduce((a, b) => a + (!b.revealed && !b.flagged ? 1 : 0), 0) // 计算周围未翻转数量
 
     // 如果周围旗子数和炸弹数相等 自动翻开周围格子
-    if (flags === block.adjacentMines)
-      sliblings.forEach(item => item.revealed = true)
+    if (flags === block.adjacentMines) {
+      sliblings.forEach((item) => {
+        item.revealed = true
+        // 格子中如果包含炸弹，游戏结束
+        if (item.mine)
+          this.onGameOver('lost')
+      })
+    }
 
     const missingFlags = block.adjacentMines - flags
     // 如果周围未翻开数量与插旗子数量相等 自动插旗
@@ -233,22 +243,33 @@ export class GamePlay {
   }
 
   /**
+   * 游戏结束判定
+   */
+  onGameOver(status: GameStates) {
+    this.state.value.status = status
+    this.state.value.endMS = +Date.now()
+    if (status === 'lost') {
+      this.showAllMines()
+      setTimeout(() => {
+        alert('lost')
+      }, 10)
+    }
+  }
+
+  /**
    * 检查游戏状态
    */
   checkGameState() {
-    if (this.state.value.gameState !== 'play')
+    if (this.state.value.status !== 'play')
       return // 游戏未处于开始状态，不可操作
     if (!this.state.value.mineGenerated)
       return // 游戏未开始，不做检查
     const blocks = this.board.flat()
-    if (blocks.every(item => item.revealed || item.flagged)) {
-      if (blocks.some(item => item.flagged && !item.mine)) {
-        this.state.value.gameState = 'lost'
-        this.showAllMines()
-      }
-      else {
-        this.state.value.gameState = 'won'
-      }
+    if (blocks.every(item => item.revealed || item.flagged || item.mine)) {
+      if (blocks.some(item => item.flagged && !item.mine))
+        this.onGameOver('lost')
+      else
+        this.onGameOver('won')
     }
   }
 }
