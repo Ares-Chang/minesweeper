@@ -6,6 +6,9 @@ const play = new GamePlay(6, 6, 3)
 useStorage('mine-state', play.state) // 数据本地持久化
 const state = computed(() => play.board)
 
+const now = $(useNow())
+const timerMS = $computed(() => Math.round((+now - play.state.value.startMS) / 1000)) // 游戏计时
+
 function newGame(difficulty: 'easy' | 'medium' | 'hard') {
   switch (difficulty) {
     case 'easy':
@@ -45,6 +48,13 @@ watchEffect(() => {
       <button btn @click="newGame('hard')">
         Hard
       </button>
+    </div>
+
+    <div flex justify-center>
+      <div font-mono text-2xl flex="~ gap-1 items-center">
+        <div i-carbon-timer />
+        {{ timerMS }}
+      </div>
     </div>
 
     <div py-5 overflow-auto>

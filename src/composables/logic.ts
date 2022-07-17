@@ -25,6 +25,7 @@ interface GameState {
   board: BlockState[][] // 存储面板格位数据
   mineGenerated: Boolean // 游戏是否开始
   gameState: 'play' | 'won' | 'lost' // 游戏状态
+  startMS: number // 游戏时长
 }
 export class GamePlay {
   state = ref() as Ref<GameState>
@@ -64,6 +65,7 @@ export class GamePlay {
       ),
       mineGenerated: false,
       gameState: 'play',
+      startMS: +Date.now(),
     }
   }
 
