@@ -50,7 +50,11 @@ export class GamePlay {
   /**
    * 游戏格位数据初始化
    */
-  reset() {
+  reset(width = this.width, height = this.height, mines = this.mines) {
+    this.width = width
+    this.height = height
+    this.mines = mines
+
     this.state.value = {
       board: Array.from({ length: this.height }, (_, y) =>
         Array.from(
@@ -97,9 +101,7 @@ export class GamePlay {
       const y = this.randomInt(0, this.height - 1)
       const block = state[y][x]
       // 初次点击位置上下左右一格内不生成炸弹
-      if (Math.abs(initial.x - block.x) <= 1)
-        return false
-      if (Math.abs(initial.y - block.y) <= 1)
+      if (Math.abs(initial.x - block.x) <= 1 && Math.abs(initial.y - block.y) <= 1)
         return false
       if (block.mine)
         return false // 如果已经是弹窗
