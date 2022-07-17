@@ -207,6 +207,25 @@ export class GamePlay {
   }
 
   /**
+   * 双击自动展开
+   * @param {object} block 当前格数据
+   */
+  autoExpand(block: BlockState) {
+    const sliblings = this.getSiblings(block)
+    const flags = sliblings.reduce((a, b) => a + (b.flagged ? 1 : 0), 0) // 计算周围旗子数量
+    const notRevealed = sliblings.reduce((a, b) => a + (!b.revealed && !b.flagged ? 1 : 0), 0) // 计算周围未翻转数量
+
+    // 如果周围旗子数和炸弹数相等 自动翻开周围格子
+    if (flags === block.adjacentMines)
+      sliblings.forEach(item => item.revealed = true)
+
+    const missingFlags = block.adjacentMines - flags
+    // 如果周围未翻开数量与插旗子数量相等 自动插旗
+    if (notRevealed === missingFlags)
+      sliblings.forEach(item => !item.revealed && !item.flagged && (item.flagged = true))
+  }
+
+  /**
    * 游戏结束，翻转所有地雷
    */
   showAllMines() {

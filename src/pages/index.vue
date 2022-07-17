@@ -85,6 +85,7 @@ watchEffect(() => {
           :key="x"
           :item="item"
           @click="play.onClick(item)"
+          @dblclick="play.autoExpand(item)"
           @contextmenu.prevent="play.onRightClick(item)"
         />
       </div>
