@@ -9,6 +9,15 @@ const state = computed(() => play.board)
 const now = $(useNow())
 const timerMS = $computed(() => Math.round((+now - play.state.value.startMS) / 1000)) // 游戏计时
 
+/**
+ * 计算炸弹剩余量(根据旗子数决定)
+ */
+const mineRest = $computed(() => {
+  if (!play.state.value.mineGenerated)
+    return play.mines
+  return play.boards.reduce((a, b) => a + (b.mine ? 1 : 0) - (b.flagged ? 1 : 0), 0)
+})
+
 function newGame(difficulty: 'easy' | 'medium' | 'hard') {
   switch (difficulty) {
     case 'easy':
@@ -50,10 +59,14 @@ watchEffect(() => {
       </button>
     </div>
 
-    <div flex justify-center>
+    <div flex="~ gap-10" justify-center>
       <div font-mono text-2xl flex="~ gap-1 items-center">
         <div i-carbon-timer />
         {{ timerMS }}
+      </div>
+      <div font-mono text-2xl flex="~ gap-1 items-center">
+        <div i-mdi-mine />
+        {{ mineRest }}
       </div>
     </div>
 
@@ -75,10 +88,6 @@ watchEffect(() => {
           @contextmenu.prevent="play.onRightClick(item)"
         />
       </div>
-    </div>
-
-    <div>
-      Count: {{ play.boards.reduce((a, b) => a + (b.mine ? 1 : 0), 0) }}
     </div>
 
     <div flex="~ gap-1" justify-center>
